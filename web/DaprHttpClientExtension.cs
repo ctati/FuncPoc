@@ -2,60 +2,11 @@ using Dapr.Client;
 
 public static class DaprHttpClientExtension
 {
-    public static IServiceCollection AddDaprHttpClient<TClient, TImplementation>(this IServiceCollection services, string appId = null, string daprEndpoint = null, string daprApiToken = null)
+    public static IServiceCollection AddDaprSingleton<TClient, TImplementation>(this IServiceCollection services, string appId, string? daprEndpoint = null, string? daprApiToken = null) where TClient : class where TImplementation : class, TClient
     { 
-/*
-        services.AddHttpClient<TClient, TImplementation>((client) => { 
-            // ConfigureDapr(client, appId);
-            if (appId is string)
-            {
-                try
-                {
-                    client.BaseAddress = new Uri($"http://{appId}");
-                }
-                catch (UriFormatException inner)
-                {
-                    throw new ArgumentException("The appId must be a valid hostname.", nameof(appId), inner);
-                }
-            }
-        })
-            .AddDaprMessageHandler(daprEndpoint, daprApiToken);
-*/
+        if (string.IsNullOrEmpty(appId)) throw new ArgumentNullException(nameof(appId));
+
+        services.AddSingleton<TClient, TImplementation>(_ => (TImplementation?)Activator.CreateInstance(typeof(TImplementation), new object[] {DaprClient.CreateInvokeHttpClient(appId, daprEndpoint, daprApiToken)}) ?? throw new InvalidOperationException("can't create an instance of type by passing a Dapr HttpClient isntance: " + typeof(TImplementation).FullName));
         return services; 
-    }
-
-    private static IHttpClientBuilder AddDaprMessageHandler(this IHttpClientBuilder builder, string daprEndpoint = null, string daprApiToken = null)
-    { 
-        builder.AddHttpMessageHandler((provider) => {
-            var handler = new InvocationHandler()
-                {
-                    InnerHandler = new HttpClientHandler(),
-                    //DaprApiToken = daprApiToken
-                };
-
-            if (daprEndpoint is string)
-            {
-                // DaprEndpoint performs validation.
-                handler.DaprEndpoint = daprEndpoint;
-            }
-            return handler;
-        });
-
-        return builder;
-    }   
-
-    private static void ConfigureDapr(HttpClient httpClient, string appId = null)
-    {
-        if (appId is string)
-        {
-            try
-            {
-                httpClient.BaseAddress = new Uri($"http://{appId}");
-            }
-            catch (UriFormatException inner)
-            {
-                throw new ArgumentException("The appId must be a valid hostname.", nameof(appId), inner);
-            }
-        }
     }
 }

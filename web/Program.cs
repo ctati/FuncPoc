@@ -22,8 +22,8 @@ builder.Services.AddControllersWithViews()
 // No code here
 #elif DAPR_SERVICE
 // TODO: work on simplifying
-// builder.Services.AddDaprHttpClient<IWeatherForecastClient, WeatherForecastClient>("poc-api");
-builder.Services.AddSingleton<IWeatherForecastClient, WeatherForecastClient>(_ => new WeatherForecastClient(DaprClient.CreateInvokeHttpClient("poc-api")));
+builder.Services.AddDaprSingleton<IWeatherForecastClient, WeatherForecastClient>("poc-api");
+//builder.Services.AddSingleton<IWeatherForecastClient, WeatherForecastClient>(_ => new WeatherForecastClient(DaprClient.CreateInvokeHttpClient("poc-api")));
 #else
 builder.Services.AddHttpClient<IWeatherForecastClient, WeatherForecastClient>(
     (client) => { client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5100/"); }

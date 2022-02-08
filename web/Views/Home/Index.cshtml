@@ -6,8 +6,14 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 
-    @foreach (var forecast in (IEnumerable<web.Proxy.WeatherForecast>)ViewData["WeatherForecastData"])
-    {
-        <p>The forecast for @forecast.Date is @forecast.Summary!</p>
+    @{
+        var data = ViewData["WeatherForecastData"];
+        if (data != null)
+        {
+            foreach (var forecast in (IEnumerable<web.Proxy.WeatherForecast>)data)
+            {
+                <p>The forecast for @forecast.Date is @forecast.Summary!</p>
+            }
+        }
     }
 </div>
