@@ -1,5 +1,4 @@
 # Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
-
 version: '3.4'
 
 services:
@@ -12,10 +11,14 @@ services:
         - DEFINES=DAPR
     ports:
       - 5101:5101
+    depends_on:
+    - api
 
   web-dapr:
     image: "daprio/daprd:latest"
-    command: [ "./daprd", "-app-id", "poc-web", "-app-port", "80" ]
+    command: [ "./daprd", "-app-id", "poc-web", "-app-port", "5101", "-config", "/dapr/dapr-config.yaml" ]
+    volumes:
+      - ".:/dapr"
     depends_on:
     - web
     network_mode: "service:web"
@@ -30,7 +33,9 @@ services:
 
   api-dapr:
     image: "daprio/daprd:latest"
-    command: [ "./daprd", "-app-id", "poc-api", "-app-port", "80" ]
+    command: [ "./daprd", "-app-id", "poc-api", "-app-port", "5100", "-config", "/dapr/dapr-config.yaml" ]
+    volumes:
+      - ".:/dapr"
     depends_on:
     - api
     network_mode: "service:api"
