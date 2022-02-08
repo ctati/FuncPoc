@@ -1,0 +1,86 @@
+# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
+version: '3.4'
+
+services:
+  web:
+    image: web
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        - DEFINES=DAPR
+    ports:
+      - 5101:5101
+    depends_on:
+    - api
+#    - zipkin
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/.vsdbg:/remote_debugger:rw
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: poc.web
+
+  web-dapr:
+    image: "daprio/daprd:latest"
+    command: [ "./daprd", "-app-id", "poc-web", "-app-port", "5101", "-log-level", "debug", "-config", "/dapr/dapr-config.yaml", "-log-as-json" ]
+    volumes:
+      - ".:/dapr"
+    depends_on:
+    - web
+    network_mode: "service:web"
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: dapr.web
+
+  api:
+    image: api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - 5100:5100
+#    depends_on:
+#    - zipkin
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ~/.vsdbg:/remote_debugger:rw
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: poc.api
+
+  api-dapr:
+    image: "daprio/daprd:latest"
+    command: [ "./daprd", "-app-id", "poc-api", "-app-port", "5100", "-log-level", "debug", "-config", "/dapr/dapr-config.yaml", "-log-as-json" ]
+    volumes:
+      - ".:/dapr"
+    depends_on:
+    - api
+    network_mode: "service:api"
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: dapr.api
+  
+#  zipkin:
+#    image: "openzipkin/zipkin"
+#    container_name: zipkin
+#    ports:
+#      - "9412:9411"

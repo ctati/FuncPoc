@@ -1,0 +1,52 @@
+# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
+version: '3.4'
+
+services:
+  fluentd:
+    image: efk-fluentd:latest
+    #build: ./fluentd
+    container_name: fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    links:
+      - "elasticsearch"
+    ports:
+      - "24225:24225"
+      - "24224:24224"
+      - "24224:24224/udp"
+
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    container_name: elasticsearch
+    expose:
+      - 9200
+    ports:
+      - "9200:9200"
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:7.17.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    links:
+      - "elasticsearch"
+    ports:
+      - "5601:5601"
+
+volumes:
+  elasticsearch-data:
+    driver: local
